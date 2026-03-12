@@ -15,12 +15,13 @@ namespace Sylius\InvoicingPlugin\Generator;
 
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
 use Sylius\InvoicingPlugin\Model\InvoicePdf;
+use Sylius\PdfBundle\Core\Renderer\TwigToPdfRendererInterface;
 use Symfony\Component\Config\FileLocatorInterface;
 
 final class InvoicePdfFileGenerator implements InvoicePdfFileGeneratorInterface
 {
     public function __construct(
-        private readonly TwigToPdfGeneratorInterface $twigToPdfGenerator,
+        private readonly TwigToPdfGeneratorInterface|TwigToPdfRendererInterface $twigToPdfRenderer,
         private readonly FileLocatorInterface $fileLocator,
         private readonly InvoiceFileNameGeneratorInterface $invoiceFileNameGenerator,
         private readonly string $template,
@@ -32,14 +33,17 @@ final class InvoicePdfFileGenerator implements InvoicePdfFileGeneratorInterface
     {
         $filename = $this->invoiceFileNameGenerator->generateForPdf($invoice);
 
-        $pdf = $this->twigToPdfGenerator->generate(
-            $this->template,
-            [
-                'invoice' => $invoice,
-                'channel' => $invoice->channel(),
-                'invoiceLogoPath' => $this->fileLocator->locate($this->invoiceLogoPath),
-            ],
-        );
+        $templateParams = [
+            'invoice' => $invoice,
+            'channel' => $invoice->channel(),
+            'invoiceLogoPath' => $this->fileLocator->locate($this->invoiceLogoPath),
+        ];
+
+        if ($this->twigToPdfRenderer instanceof TwigToPdfRendererInterface) {
+            $pdf = $this->twigToPdfRenderer->render($this->template, $templateParams, 'sylius_invoicing');
+        } else {
+            $pdf = $this->twigToPdfRenderer->generate($this->template, $templateParams);
+        }
 
         return new InvoicePdf($filename, $pdf);
     }

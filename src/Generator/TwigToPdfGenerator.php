@@ -16,6 +16,9 @@ namespace Sylius\InvoicingPlugin\Generator;
 use Knp\Snappy\GeneratorInterface;
 use Twig\Environment;
 
+/**
+ * @deprecated since sylius/invoicing-plugin 2.1, use Sylius\PdfBundle\Core\Renderer\TwigToPdfRendererInterface from sylius/pdf-bundle instead.
+ */
 final class TwigToPdfGenerator implements TwigToPdfGeneratorInterface
 {
     public function __construct(

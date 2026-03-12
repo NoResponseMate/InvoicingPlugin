@@ -69,18 +69,20 @@
         </service>
         <service id="Sylius\InvoicingPlugin\Creator\MassInvoicesCreatorInterface" alias="sylius_invoicing.creator.mass_invoices" />
 
-        <service id="sylius_invoicing.generator.pdf_options" class="Sylius\InvoicingPlugin\Generator\PdfOptionsGenerator">
-            <argument type="service" id="file_locator" />
-            <argument>%knp_snappy.pdf.options%</argument>
-            <argument>%sylius_invoicing.pdf_generator.allowed_files%</argument>
-        </service>
-        <service id="Sylius\InvoicingPlugin\Generator\PdfOptionsGeneratorInterface" alias="sylius_invoicing.generator.pdf_options" />
-
         <service id="sylius_invoicing.generator.twig_to_pdf" class="Sylius\InvoicingPlugin\Generator\TwigToPdfGenerator">
             <argument type="service" id="twig" />
             <argument type="service" id="knp_snappy.pdf" />
             <argument type="service" id="sylius_invoicing.generator.pdf_options" />
+            <deprecated package="sylius/invoicing-plugin" version="2.1">The "%service_id%" service is deprecated. Use Sylius\PdfBundle\Core\Renderer\TwigToPdfRendererInterface from sylius/pdf-bundle instead.</deprecated>
         </service>
         <service id="Sylius\InvoicingPlugin\Generator\TwigToPdfGeneratorInterface" alias="sylius_invoicing.generator.twig_to_pdf" />
+
+        <service id="sylius_invoicing.generator.pdf_options" class="Sylius\InvoicingPlugin\Generator\PdfOptionsGenerator">
+            <argument type="service" id="file_locator" />
+            <argument>%knp_snappy.pdf.options%</argument>
+            <argument>%sylius_invoicing.pdf_generator.allowed_files%</argument>
+            <deprecated package="sylius/invoicing-plugin" version="2.1">The "%service_id%" service is deprecated. PDF options are now handled by sylius/pdf-bundle adapters.</deprecated>
+        </service>
+        <service id="Sylius\InvoicingPlugin\Generator\PdfOptionsGeneratorInterface" alias="sylius_invoicing.generator.pdf_options" />
     </services>
 </container>

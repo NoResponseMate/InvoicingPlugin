@@ -10,9 +10,16 @@
     ],
     "description": "Invoicing plugin for Sylius.",
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/NoResponseMate/PdfBundle.git"
+        }
+    ],
     "require": {
         "php": "^8.2",
         "knplabs/knp-snappy-bundle": "^1.10",
+        "sylius/pdf-bundle": "@dev",
         "ramsey/uuid": "^4.7",
         "sylius/grid-bundle": "^1.13",
         "sylius/resource-bundle": "^1.12",

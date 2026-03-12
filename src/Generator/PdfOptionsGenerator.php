@@ -15,6 +15,9 @@ namespace Sylius\InvoicingPlugin\Generator;
 
 use Symfony\Component\Config\FileLocatorInterface;
 
+/**
+ * @deprecated since sylius/invoicing-plugin 2.1, use sylius/pdf-bundle's adapter options instead.
+ */
 final class PdfOptionsGenerator implements PdfOptionsGeneratorInterface
 {
     public function __construct(

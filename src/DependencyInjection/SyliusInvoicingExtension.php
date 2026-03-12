@@ -15,11 +15,13 @@ namespace Sylius\InvoicingPlugin\DependencyInjection;
 
 use Sylius\Bundle\CoreBundle\DependencyInjection\PrependDoctrineMigrationsTrait;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
+use Sylius\PdfBundle\Core\Renderer\TwigToPdfRendererInterface;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 
 final class SyliusInvoicingExtension extends AbstractResourceExtension implements PrependExtensionInterface
 {
@@ -35,6 +37,12 @@ final class SyliusInvoicingExtension extends AbstractResourceExtension implement
 
         $config = $this->processConfiguration($configuration, $configs);
         $container->setParameter('sylius_invoicing.pdf_generator.allowed_files', $config['pdf_generator']['allowed_files']);
+
+        if (!$config['pdf_generator']['legacy']) {
+            $container->getDefinition('sylius_invoicing.generator.invoice_pdf_file')
+                ->replaceArgument(0, new Reference(TwigToPdfRendererInterface::class))
+            ;
+        }
     }
 
     public function prepend(ContainerBuilder $container): void
@@ -42,6 +50,10 @@ final class SyliusInvoicingExtension extends AbstractResourceExtension implement
         $config = $this->getCurrentConfiguration($container);
 
         $container->setParameter('sylius_invoicing.pdf_generator.enabled', $config['pdf_generator']['enabled']);
+
+        if (!$config['pdf_generator']['legacy']) {
+            $this->prependPdfBundleConfiguration($container, $config);
+        }
 
         $this->registerResources('sylius_invoicing', 'doctrine/orm', $config['resources'], $container);
 
@@ -71,5 +83,26 @@ final class SyliusInvoicingExtension extends AbstractResourceExtension implement
         $configs = $container->getExtensionConfig($this->getAlias());
 
         return $this->processConfiguration($configuration, $configs);
+    }
+
+    private function prependPdfBundleConfiguration(ContainerBuilder $container, array $config): void
+    {
+        $allowedFiles = $config['pdf_generator']['allowed_files'];
+
+        $contextConfig = [
+            'adapter' => 'knp_snappy',
+        ];
+
+        if ([] !== $allowedFiles) {
+            $contextConfig['options'] = [
+                'allowed_files' => $allowedFiles,
+            ];
+        }
+
+        $container->prependExtensionConfig('sylius_pdf', [
+            'contexts' => [
+                'sylius_invoicing' => $contextConfig,
+            ],
+        ]);
     }
 }

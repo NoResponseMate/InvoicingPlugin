@@ -23,6 +23,8 @@ use Sylius\InvoicingPlugin\Entity\InvoiceSequence;
 use Sylius\InvoicingPlugin\Entity\InvoiceShopBillingData;
 use Sylius\InvoicingPlugin\Entity\LineItem;
 use Sylius\InvoicingPlugin\Entity\TaxItem;
+use Sylius\InvoicingPlugin\Generator\TwigToPdfGenerator;
+use Sylius\PdfBundle\Core\Renderer\TwigToPdfRendererInterface;
 use SyliusLabs\DoctrineMigrationsExtraBundle\DependencyInjection\SyliusLabsDoctrineMigrationsExtraExtension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 
@@ -102,6 +104,98 @@ class SyliusInvoicingExtensionTest extends AbstractExtensionTestCase
         $this->prepend();
 
         $this->assertContainerBuilderHasParameter('sylius_invoicing.pdf_generator.enabled', false);
+    }
+
+    /** @test */
+    public function it_does_not_prepend_sylius_pdf_configuration_when_legacy_is_enabled(): void
+    {
+        $this->container->prependExtensionConfig(
+            'sylius_invoicing',
+            ['pdf_generator' => ['allowed_files' => ['swans.png'], 'legacy' => true]],
+        );
+
+        $this->prepend();
+
+        $syliusPdfConfig = $this->container->getExtensionConfig('sylius_pdf');
+
+        self::assertEmpty($syliusPdfConfig);
+    }
+
+    /** @test */
+    public function it_prepends_sylius_pdf_context_configuration_when_legacy_is_disabled(): void
+    {
+        $this->container->prependExtensionConfig(
+            'sylius_invoicing',
+            ['pdf_generator' => ['allowed_files' => ['swans.png', 'product.png'], 'legacy' => false]],
+        );
+
+        $this->prepend();
+
+        $syliusPdfConfig = $this->container->getExtensionConfig('sylius_pdf');
+
+        self::assertNotEmpty($syliusPdfConfig);
+        self::assertSame(
+            [
+                'contexts' => [
+                    'sylius_invoicing' => [
+                        'adapter' => 'knp_snappy',
+                        'options' => [
+                            'allowed_files' => ['swans.png', 'product.png'],
+                        ],
+                    ],
+                ],
+            ],
+            $syliusPdfConfig[0],
+        );
+    }
+
+    /** @test */
+    public function it_prepends_sylius_pdf_context_without_options_when_no_allowed_files(): void
+    {
+        $this->container->prependExtensionConfig(
+            'sylius_invoicing',
+            ['pdf_generator' => ['legacy' => false]],
+        );
+
+        $this->prepend();
+
+        $syliusPdfConfig = $this->container->getExtensionConfig('sylius_pdf');
+
+        self::assertNotEmpty($syliusPdfConfig);
+        self::assertSame(
+            [
+                'contexts' => [
+                    'sylius_invoicing' => [
+                        'adapter' => 'knp_snappy',
+                    ],
+                ],
+            ],
+            $syliusPdfConfig[0],
+        );
+    }
+
+    /** @test */
+    public function it_keeps_legacy_twig_to_pdf_generator_when_legacy_is_enabled(): void
+    {
+        $this->load(['pdf_generator' => ['legacy' => true]]);
+
+        $this->assertContainerBuilderHasService(
+            'sylius_invoicing.generator.twig_to_pdf',
+            TwigToPdfGenerator::class,
+        );
+    }
+
+    /** @test */
+    public function it_replaces_invoice_pdf_file_generator_argument_when_legacy_is_disabled(): void
+    {
+        $this->load(['pdf_generator' => ['legacy' => false]]);
+
+        $definition = $this->container->getDefinition('sylius_invoicing.generator.invoice_pdf_file');
+
+        self::assertEquals(
+            TwigToPdfRendererInterface::class,
+            (string) $definition->getArgument(0),
+        );
     }
 
     /** @test */
